@@ -32,5 +32,4 @@ Browse property listings, explore trends, and connect with agents through a clea
 MongoDB + Mongoose integration coming soon.
 
 ## 🖥️ How Estate-App Looks on Your Desktop
-<img src="https://img.sanishtech.com/u/75ac6023ad2d288c9cae898f141abd2e.png" alt="Currency Converter Screenshot" width="800">
->>>>>>> fb29f55361365c85b77d30691958ed59428ec771
+<img src="https://img.sanishtech.com/u/75ac6023ad2d288c9cae898f141abd2e.png" alt="Currency Converter Screenshot" width="800>
