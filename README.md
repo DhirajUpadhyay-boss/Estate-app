@@ -1,29 +1,33 @@
-🏡 Estate — Real Estate Web App
+# 🏡 Estate — Real Estate Web App
 
-A full-stack Real Estate platform built using the MERN stack.
-Browse property listings, explore trends, and connect with agents
-through a clean and responsive interface.
+A full-stack Real Estate platform built using the **MERN stack**.
+Browse property listings, explore trends, and connect with agents through a clean and responsive interface.
 
-🛠 Tech Stack
+---
+## 🛠 Tech Stack
 
-Frontend:
-  • React.js — Component-based UI
-  • Tailwind CSS — Utility-first modern styling
+### **Frontend**
+- **React.js** — Component-based UI
+- **Tailwind CSS** — Utility-first modern styling
 
-Backend:
-  • Node.js + Express.js — REST API server
-  • CORS — Cross-origin request handling
-  • express.json() — JSON body parsing middleware
+### **Backend**
+- **Node.js + Express.js** — REST API server
+- **CORS** — Cross-origin request handling
+- **express.json()** — JSON body parsing middleware
 
-Database (Coming Soon):
-  • MongoDB + Mongoose — Persistent data storage
+### **Database** _(Coming Soon)_
+- **MongoDB + Mongoose** — Persistent data storage
 
-⚙️ API Endpoints
-  GET /api/research  — Fetch research/property data
-  GET /api/news      — Fetch real estate news
+## ⚙️ API Endpoints
 
-🚧 Status: Active Development
-  MongoDB + Mongoose integration coming soon.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/research` | Fetch research/property data |
+| `GET` | `/api/news` | Fetch real estate news |
 
-How Estate-App looks on Desktop
+---
+## 🚧 Status: Active Development
+MongoDB + Mongoose integration coming soon.
+
+## 🖥️ How Estate-App Looks on Your Desktop
 <img src="https://img.sanishtech.com/u/75ac6023ad2d288c9cae898f141abd2e.png" alt="Currency Converter Screenshot" width="800">
