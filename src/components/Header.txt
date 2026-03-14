@@ -1,0 +1,24 @@
+import React from 'react'
+import Navbar from './Navbar.jsx'
+
+const Header = () => {
+  return (
+    <div className='min-h-screen mb-4 bg-cover bg-center w-full overflow-hidden relative '
+     style={{backgroundImage: "url('https://i.ytimg.com/vi/_V27J_TNu0I/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLCays7ocmLXvksrnr7423ZySptRnQ')"}} id='Header'>
+      
+      <Navbar/>
+      
+      <div className='container relative z-[1] text-center mx-auto px-4 sm:px-6 md:px-20 lg:px-32 text-white flex flex-col justify-center items-center min-h-screen'>
+        <h2 className='text-3xl sm:text-5xl md:text-6xl lg:text-[82px] max-w-4xl font-bold leading-tight mb-6 sm:mb-8 md:mb-10'>
+          Explore homes that fit your dreams
+        </h2>
+        <div className='flex flex-col sm:flex-row gap-3 sm:gap-5 justify-center w-full sm:w-auto'>
+          <a href="#Projects" className='px-6 sm:px-8 md:px-10 py-2 sm:py-3 border-2 border-white text-white rounded hover:bg-white hover:text-gray-900 transition-all duration-300 font-medium text-sm sm:text-base'>Projects</a>
+          <a href="#Contact" className='px-6 sm:px-8 md:px-10 py-2 sm:py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition-all duration-300 font-medium text-sm sm:text-base'>Contact Us</a>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default Header
