@@ -1,5 +1,5 @@
 // src/main.jsx
-import React, { StrictMode } from 'react';
+import React, { lazy,StrictMode,Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css'
 
@@ -18,10 +18,12 @@ import Profile from './Account/Profile.jsx';
 import Price from './Home/Price.jsx';
 import Housing from './Home/Housing.jsx';
 import PropertyTrend from './Home/PropertyTrend.jsx';
-import Markets from './Propertyblog/Markets.jsx';
+// import Markets from './Propertyblog/Markets.jsx';
+const Markets = lazy(() => import('./Propertyblog/Markets.jsx'));
 import CurrentNews from './Propertyblog/Current.jsx';
 import Budget2024 from './Propertyblog/Budget.jsx';
 import LocalityTrends from './Propertyblog/Locality.jsx';
+
 
 // ✅ IMPORT ProtectedRoute
 
@@ -52,11 +54,12 @@ const router = createBrowserRouter([
     ],
   },
 ]);
-
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <UserProvider>
-      <RouterProvider router={router} />
+      <Suspense fallback={<div>Loading...</div>}>
+        <RouterProvider router={router} />
+      </Suspense>
     </UserProvider>
   </StrictMode>
 );
