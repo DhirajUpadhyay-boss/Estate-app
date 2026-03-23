@@ -53,7 +53,7 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <UserProvider>
       <Suspense fallback={<div>Loading...</div>}>
-        <RouterProvider router={router} />
+        <RouterProvider router={router} /> 
       </Suspense>
     </UserProvider>
   </StrictMode>
