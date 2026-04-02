@@ -4,7 +4,9 @@
   "description": "Real-Estate-Home",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node server.js ",
+    "trial": "node Trialserver.js",
+    "user": "node user.js",
     "dev": "nodemon server.js"
   },
   "keywords": [
@@ -14,6 +16,7 @@
   "author": "Dhiraj",
   "license": "ISC",
   "dependencies": {
+    "body-parser": "^2.2.2",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1"

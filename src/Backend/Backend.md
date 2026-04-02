@@ -40,3 +40,76 @@ Event-loop:
 •  ES Modules vs CommonJS — require() vs import, know both
 •  Environment variables — process.env, dotenv package
 •  Error handling — try/catch with async code
+
+const http = require('http');
+
+const DEFAULT_PORT = 3000;
+const PORT = Number(process.env.PORT) || DEFAULT_PORT;
+
+const server = http.createServer((req, res) => {
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+
+  if (req.url === '/About') {
+    res.statusCode = 200;
+    res.end('<html><h1>Hello, I am ready??</h1></html>');
+    return;
+  }
+
+  res.statusCode = 404;
+  res.end('<html><h1>404 - Not Found</h1></html>');
+});
+
+function listenWithFallback(port) {
+  server.listen(port, () => {
+    console.log(`Server is listening on http://localhost:${port}`);
+  });
+}
+
+server.on('error', (err) => {
+  if (err && err.code === 'EADDRINUSE') {
+    const nextPort = (server.address()?.port || PORT) + 1;
+    console.log(`Port is busy. Trying port ${nextPort}...`);
+    listenWithFallback(nextPort);
+    return;
+  }
+  throw err;
+});
+
+listenWithFallback(PORT);
+
+
+------------------------------------------[Chunks-and-Buffers-in-React]_______________________________________
+ # Chunks
+ Sending data in form of packets[small-units] both for uploading and downloading.
+ # Buffers
+ Sends data in a sequential and organised manner, so that no data is lost.
+ 
+ -----------------------------------------------[NPM-and-Scripts]______________________________________
+npm init: Initialize a new-project.
+
+-------------------------------------------[Types-of-Errors]:
+1. [Syntax-Error]: error in writing the code. where you are not following syntax-rules properly.
+2. [Runtime-Error]:  error that can be only caught on runtime,not compile-time.
+----------------------------------------------------------------------------------
+
+----------------------------------<Middleware-and-Routes>:_________________________________________________
+Middlewares: Acts as a checker/Authenticiates, That request should be further proceeded.
+Logics is broken down into small middlewares:
+sequence of middleware is important.
+
+[Every-middleware-is-assigned-for-a-particularly-Task.]
+# Second task is only completed after First ones.
+
+-----------------------<Express.js-starts>____________________________________________-
+# Difference between app.get()and app.use()
+app.use() mounts middleware that runs for incoming requests (optionally scoped to a path), and app.get(path, …) registers a handler that runs only for GET requests to that specific route.
+
+
+
+-------------------------[MVC-concepts]
+It is a architecture: helps in definiing the code-structure properly.
+[Learning MVC helps you split routes/controllers, business logic/models, and responses/views so your Register, blogs, and properties code stays organized, easier to test, and simpler to grow without one giant file.]
+
+----[Inner-working-between-Frontend-and-Backend]_____________________________________
+Yes — your React page (e.g. Home.jsx) uses axios to send an HTTP GET to something like http://localhost:5000/api/research, Express loads that in server.js via app.use / app.get, the matching route forwards the request to the right controller, and the controller responds with JSON that axios returns to your component.
+

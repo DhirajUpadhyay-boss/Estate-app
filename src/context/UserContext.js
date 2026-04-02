@@ -1,6 +1,4 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { auth } from './firebase'; // Import Firebase auth
-import { onAuthStateChanged } from 'firebase/auth';
 
 export const UserContext = createContext(undefined);
 
@@ -14,61 +12,42 @@ export const useUser = () => {
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // Add loading state
+  const [loading, setLoading] = useState(true);
 
-  // Listen to Firebase auth state changes
+  // Load user from localStorage on mount
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        // User is logged in via Firebase
-        const userData = {
-          uid: firebaseUser.uid,
-          phone: firebaseUser.phoneNumber,
-          email: firebaseUser.email,
-          // Add any additional data from localStorage
-          ...JSON.parse(localStorage.getItem('userProfile') || '{}')
-        };
-        setUser(userData);
-        localStorage.setItem('realEstateUser', JSON.stringify(userData));
-      } else {
-        // User is logged out
-        setUser(null);
-        localStorage.removeItem('realEstateUser');
-      }
-      setLoading(false);
-    });
-
-    // Cleanup subscription
-    return () => unsubscribe();
+    const storedUser = localStorage.getItem('realEstateUser');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    setLoading(false);
   }, []);
 
-  // Save additional user profile data (name, preferences, etc.)
+  // Save user data (login / register)
   const saveUser = (userData) => {
     const updatedUser = { ...user, ...userData };
     setUser(updatedUser);
-    localStorage.setItem('userProfile', JSON.stringify(userData));
+    localStorage.setItem('realEstateUser', JSON.stringify(updatedUser));
+    localStorage.setItem('userProfile', JSON.stringify(updatedUser));
   };
 
-  // Logout from Firebase
-  const logoutUser = async () => {
-    try {
-      await auth.signOut();
-      setUser(null);
-      localStorage.removeItem('realEstateUser');
-      localStorage.removeItem('userProfile');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+  // Logout
+  const logoutUser = () => {
+    setUser(null);
+    localStorage.removeItem('realEstateUser');
+    localStorage.removeItem('userProfile');
   };
 
   const isLoggedIn = () => {
     return user !== null;
   };
 
+  // Update specific user fields
   const updateUser = (newData) => {
     const updatedUser = { ...user, ...newData };
     setUser(updatedUser);
-    localStorage.setItem('userProfile', JSON.stringify(newData));
+    localStorage.setItem('realEstateUser', JSON.stringify(updatedUser));
+    localStorage.setItem('userProfile', JSON.stringify(updatedUser));
   };
 
   const value = {
@@ -77,7 +56,7 @@ export const UserProvider = ({ children }) => {
     logoutUser,
     isLoggedIn,
     updateUser,
-    loading // Expose loading state
+    loading,
   };
 
   return (

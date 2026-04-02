@@ -7,7 +7,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 const Register = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { users, saveUser, loginUser } = useUser();
+  const { user, saveUser } = useUser();
 
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
@@ -18,10 +18,8 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Helper: validate name – first uppercase, at least 3 letters, letters only
   const isValidName = (value) => /^[A-Z][a-zA-Z]{2,}$/.test(value.trim());
 
-  // Restore state from navigation (including accepted terms from /legal)
   useEffect(() => {
     const state = location.state || {};
 
@@ -40,9 +38,7 @@ const Register = () => {
     }
   }, [location.state]);
 
-  // Send Code (mock: generate and log to console)
   const sendCode = () => {
-    alert('Code is generated, click F12 to see it in the console.');
     setError('');
 
     if (!isValidName(name)) {
@@ -50,20 +46,23 @@ const Register = () => {
       return;
     }
 
-    const normalizedEmail = email.toLowerCase();
-    if (!normalizedEmail.match(/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
-      setError('Please enter a valid email address.');
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Strict Gmail format check
+    if (!normalizedEmail.match(/^[\w.-]+@gmail\.com$/)) {
+      setError('Please enter the Gmail correctly (e.g. user@gmail.com)');
       return;
     }
 
-    const existingUser = users.find(u => u.email === normalizedEmail);
-    if (existingUser) {
+    // Check if user is already logged in with this email
+    if (user && user.email === normalizedEmail) {
       alert('✅ Already registered. Redirecting to login!');
       navigate('/login', { state: { email: normalizedEmail } });
       return;
     }
 
     setLoading(true);
+    alert('Code is generated, click F12 to see it in the console.');
 
     const mockCode = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedCode(mockCode);
@@ -74,7 +73,6 @@ const Register = () => {
     setError('');
   };
 
-  // Verify Code (check against generated one)
   const verifyCode = () => {
     setError('');
 
@@ -104,7 +102,6 @@ const Register = () => {
     }
   };
 
-  // Navigate to legal page – the ONLY place that can mark termsAccepted = true
   const goToLegal = () => {
     navigate('/legal', {
       state: {
@@ -116,16 +113,8 @@ const Register = () => {
     });
   };
 
-  // Complete Registration
   const register = () => {
     setError('');
-
-    if (!isValidName(name)) {
-      setError(
-        'Name must start with an uppercase letter and contain at least 3 letters (e.g. "Ram").'
-      );
-      return;
-    }
 
     if (!termsAccepted) {
       setError('You must accept the Terms & Conditions and Privacy Policy');
@@ -135,11 +124,10 @@ const Register = () => {
     const newUser = {
       name: name.trim(),
       email: email.toLowerCase().trim(),
-      // Add more fields if needed
     };
 
     console.log('👤 Register: saving user via context:', newUser);
-    saveUser(newUser); // this writes to localStorage in UserContext and activates session
+    saveUser(newUser);
 
     alert('✅ Registration Successful!');
     navigate('/projects', { replace: true });
@@ -206,7 +194,7 @@ const Register = () => {
                 <Mail className="absolute left-4 top-4 text-gray-400" size={20} />
                 <input
                   type="email"
-                  placeholder="Email Address *"
+                  placeholder="Email Address * (e.g. user@gmail.com)"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-12 pr-4 py-4 border-2 rounded-xl focus:border-blue-500 outline-none"
@@ -282,7 +270,7 @@ const Register = () => {
             </div>
           )}
 
-          {/* Step 3: Terms */}
+          {/* Step 3: Terms Only */}
           {step === 3 && (
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-gray-800">Accept Terms</h2>

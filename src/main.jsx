@@ -27,10 +27,10 @@ const LocalityTrends = lazy(() => import('./Propertyblog/Locality.jsx'));
 
 const router = createBrowserRouter([
   {
-    path: '/',
+    path: '/', // top-level-elmeent(nesting occurs)
     element: <Layout />,
     children: [
-      { index: true, element: <Home /> },
+      { index: true, element: <Home /> }, // nesting of all different routes.
       { path: 'register', element: <Register /> },
       { path: 'login', element: <Login /> },
       { path: 'legal', element: <LegalTerms /> },

@@ -54,7 +54,7 @@ const Navbar = () => {
               {/* Home */}
               <li>
                 <NavLink
-                  to="/"
+                  to="/" // this to link automatically tells is {isActive} the user is active on / route(Home)
                   className={({ isActive }) =>
                     `cursor-pointer transition-all duration-200 text-base lg:text-lg ${
                       isActive
