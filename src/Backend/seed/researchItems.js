@@ -19,3 +19,4 @@ const researchItems = [
 ];
 
 module.exports = { researchItems };
+

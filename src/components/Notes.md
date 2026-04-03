@@ -27,3 +27,5 @@ Both .js and .jsx work identically in your setup because Vite (your bundler) han
 
 The reason .js is fine here specifically:
 [Why-children as a prop?]:
+---------------------------------<A-New-chapter to manage-Front-end>
+[Next.js]:

@@ -1,26 +1,53 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios'
+import api from '../lib/api';
 
 const Home = () => {
   const [researchItems, setResearchItems] = useState([]);
   const [newsItems, setNewsItems] = useState([]);
+  const newsScrollRef = useRef(null);
+  const animFrameRef = useRef(null);
+  const isPaused = useRef(false);
 
   useEffect(() => {
-  axios.get('http://localhost:5000/api/research')
-    .then((res) => {
-      if (Array.isArray(res.data)) setResearchItems(res.data);
-      else console.error('Expected array, got:', res.data);
-    })
-    .catch((err) => console.error('Failed to fetch research:', err));
+    api
+      .get('/api/research')
+      .then((res) => {
+        if (Array.isArray(res.data)) setResearchItems(res.data);
+        else console.error('Expected array, got:', res.data);
+      })
+      .catch((err) => console.error('Failed to fetch research:', err));
 
-  axios.get('http://localhost:5000/api/news')
-    .then((res) => {
-      if (Array.isArray(res.data)) setNewsItems(res.data);
-      else console.error('Expected array, got:', res.data);
-    })
-    .catch((err) => console.error('Failed to fetch news:', err));
-}, []);
+    api
+      .get('/api/news')
+      .then((res) => {
+        if (Array.isArray(res.data)) setNewsItems(res.data);
+        else console.error('Expected array, got:', res.data);
+      })
+      .catch((err) => console.error('Failed to fetch news:', err));
+  }, []);
+
+  // Auto-scroll the news strip
+  useEffect(() => {
+    if (newsItems.length === 0) return;
+    const container = newsScrollRef.current;
+    if (!container) return;
+
+    const speed = 0.6; // px per frame — increase for faster scroll
+    const tick = () => {
+      if (!isPaused.current) {
+        container.scrollLeft += speed;
+        // Loop back to start seamlessly
+        if (container.scrollLeft >= container.scrollWidth - container.clientWidth) {
+          container.scrollLeft = 0;
+        }
+      }
+      animFrameRef.current = requestAnimationFrame(tick);
+    };
+
+    animFrameRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animFrameRef.current);
+  }, [newsItems]);
 
 
   return (
@@ -124,12 +151,18 @@ const Home = () => {
             </button>
           </div>
 
-          {/* Horizontal scroll container */}
-          <div className="overflow-x-auto">
-            <div className="flex gap-6 pb-4 min-w-full">
-              {newsItems.map((item) => (
+          {/* Auto-scrolling news strip */}
+          <div
+            ref={newsScrollRef}
+            className="overflow-x-hidden cursor-grab"
+            onMouseEnter={() => (isPaused.current = true)}
+            onMouseLeave={() => (isPaused.current = false)}
+          >
+            <div className="flex gap-6 pb-4">
+              {/* Duplicate items for seamless loop */}
+              {[...newsItems, ...newsItems].map((item, idx) => (
                 <a
-                  key={item.id}
+                  key={`${item.id}-${idx}`}
                   href={item.href}
                   target="_blank"
                   rel="noopener noreferrer"

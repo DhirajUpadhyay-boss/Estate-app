@@ -34,7 +34,15 @@ const LegalTerms = () => {
       return;
     }
 
-    navigate('/Register', { state: { termsAccepted: true }, replace: true });
+    navigate('/register', {
+      state: {
+        ...location.state,
+        termsAccepted: true,
+        accepted: true,
+        step: 2,
+      },
+      replace: true,
+    });
   };
 
   return (

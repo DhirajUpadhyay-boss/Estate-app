@@ -1,10 +1,9 @@
 // UserContext.jsx
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import api, { TOKEN_KEY } from '../lib/api';
 
-// Create Context
 export const UserContext = createContext(undefined);
 
-// Custom hook to use context easily
 export const useUser = () => {
   const context = useContext(UserContext);
   if (context === undefined) {
@@ -13,135 +12,130 @@ export const useUser = () => {
   return context;
 };
 
-// Provider Component
-export const UserProvider = ({ children }) => {
-  const [users, setUsers] = useState(() => {
-    try {
-      const savedUsersStr = localStorage.getItem('realEstateUsers');
-      if (savedUsersStr) {
-        const parsedUsers = JSON.parse(savedUsersStr);
-        console.log('✅ Loaded users from localStorage:', parsedUsers);
-        return parsedUsers;
-      } else {
-        console.log('ℹ️ No saved users in localStorage');
-        return [];
-      }
-    } catch (error) {
-      console.error('Error loading from storage:', error);
-      localStorage.removeItem('realEstateUsers');
-      return [];
-    }
-  });
+const SESSION_ACTIVE_KEY = 'realEstateSessionActive';
+const ACTIVE_USER_KEY = 'realEstateActiveUser';
 
+export const UserProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(() => {
     try {
-      const activeUserStr = sessionStorage.getItem('realEstateActiveUser');
-      if (activeUserStr) {
-        const parsedActiveUser = JSON.parse(activeUserStr);
-        console.log('✅ Restored active user:', parsedActiveUser);
-        return parsedActiveUser;
-      } else {
-        console.log('ℹ️ No active user; users loaded but logged out');
-        return null;
-      }
-    } catch (error) {
-      console.error('Error loading from storage:', error);
-      sessionStorage.removeItem('realEstateSessionActive');
-      sessionStorage.removeItem('realEstateActiveUser');
+      const token = sessionStorage.getItem(TOKEN_KEY);
+      const activeUserStr = sessionStorage.getItem(ACTIVE_USER_KEY);
+      if (!token || !activeUserStr) return null;
+      return JSON.parse(activeUserStr);
+    } catch {
       return null;
     }
   });
 
   const [sessionActive, setSessionActive] = useState(() => {
-    const sessionFlag = sessionStorage.getItem('realEstateSessionActive') === 'true';
-    console.log(sessionFlag ? '✅ Restored active session' : 'ℹ️ No active session');
-    return sessionFlag;
+    const token = sessionStorage.getItem(TOKEN_KEY);
+    return (
+      !!token &&
+      sessionStorage.getItem(SESSION_ACTIVE_KEY) === 'true'
+    );
   });
 
-  // Function to save a new user (registration)
-  const saveUser = (userData) => {
-    try {
-      const normalizedEmail = userData.email.toLowerCase();
-      const userToSave = { ...userData, email: normalizedEmail };
-      const existingUser = users.find(u => u.email === normalizedEmail);
+  const [users] = useState([]); // legacy; server is source of truth for accounts
 
-      let updatedUsers;
-      if (existingUser) {
-        console.log('ℹ️ User with this email already exists; updating instead');
-        updatedUsers = users.map(u =>
-          u.email === normalizedEmail ? userToSave : u
-        );
-      } else {
-        updatedUsers = [...users, userToSave];
-      }
-      setUsers(updatedUsers);
-      localStorage.setItem('realEstateUsers', JSON.stringify(updatedUsers));
-
-      setCurrentUser(userToSave);
-      setSessionActive(true);
-      sessionStorage.setItem('realEstateSessionActive', 'true');
-      sessionStorage.setItem('realEstateActiveUser', JSON.stringify(userToSave));
-      console.log('💾 Saved/updated user & activated session:', userToSave);
-    } catch (error) {
-      console.error('Error saving user:', error);
-    }
-  };
-
-  // Function to login (activate session for existing user)
-  const loginUser = (userData) => {
-    try {
-      setCurrentUser(userData);
-      setSessionActive(true);
-      sessionStorage.setItem('realEstateSessionActive', 'true');
-      sessionStorage.setItem('realEstateActiveUser', JSON.stringify(userData));
-      console.log('✅ Logged in user:', userData);
-    } catch (error) {
-      console.error('Error during login:', error);
-    }
-  };
-
-  // Function to logout
-  const logoutUser = () => {
+  const logoutUser = useCallback(() => {
     try {
       setCurrentUser(null);
       setSessionActive(false);
-      sessionStorage.removeItem('realEstateSessionActive');
-      sessionStorage.removeItem('realEstateActiveUser');
-      console.log('🚪 Logged out; session deactivated but users preserved');
+      sessionStorage.removeItem(SESSION_ACTIVE_KEY);
+      sessionStorage.removeItem(ACTIVE_USER_KEY);
+      sessionStorage.removeItem(TOKEN_KEY);
     } catch (error) {
       console.error('Error during logout:', error);
     }
-  };
+  }, []);
 
-  // Logged-in status
-  const isLoggedIn = sessionActive;
+  const setAuthSession = useCallback(({ user, token }) => {
+    const normalized = { ...user, id: user.id };
+    setCurrentUser(normalized);
+    setSessionActive(true);
+    sessionStorage.setItem(TOKEN_KEY, token);
+    sessionStorage.setItem(SESSION_ACTIVE_KEY, 'true');
+    sessionStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(normalized));
+  }, []);
 
-  // Function to update current user
-  const updateUser = (newData) => {
+  useEffect(() => {
+    const token = sessionStorage.getItem(TOKEN_KEY);
+    if (!token) return;
+
+    api
+      .get('/api/auth/me')
+      .then((res) => {
+        const user = res.data.user;
+        setCurrentUser(user);
+        sessionStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(user));
+        setSessionActive(true);
+        sessionStorage.setItem(SESSION_ACTIVE_KEY, 'true');
+      })
+      .catch(() => {
+        logoutUser();
+      });
+  }, [logoutUser]);
+
+  /** Profile-only updates (client) until PATCH /api/auth/me exists */
+  const saveUser = useCallback((userData) => {
     try {
       if (!currentUser) return;
-      const normalizedEmail = currentUser.email; // Assume email not changing
-      const updatedUser = { ...currentUser, ...newData, email: normalizedEmail };
+      const updatedUser = { ...currentUser, ...userData };
       setCurrentUser(updatedUser);
-      sessionStorage.setItem('realEstateActiveUser', JSON.stringify(updatedUser));
-
-      const updatedUsers = users.map(u => u.email === normalizedEmail ? updatedUser : u);
-      setUsers(updatedUsers);
-      localStorage.setItem('realEstateUsers', JSON.stringify(updatedUsers));
-      console.log('✏️ Updated user:', updatedUser);
+      sessionStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(updatedUser));
     } catch (error) {
-      console.error('Error updating user:', error);
+      console.error('Error saving user:', error);
     }
-  };
+  }, [currentUser]);
+
+  const loginUser = useCallback(
+    (userData, token) => {
+      if (!token) {
+        console.warn('loginUser: token required for API auth');
+        return;
+      }
+      setAuthSession({ user: userData, token });
+    },
+    [setAuthSession]
+  );
+
+  const updateUser = useCallback(
+    (newData) => {
+      try {
+        if (!currentUser) return;
+        const normalizedEmail = currentUser.email;
+        const updatedUser = { ...currentUser, ...newData, email: normalizedEmail };
+        setCurrentUser(updatedUser);
+        sessionStorage.setItem(ACTIVE_USER_KEY, JSON.stringify(updatedUser));
+      } catch (error) {
+        console.error('Error updating user:', error);
+      }
+    },
+    [currentUser]
+  );
+
+  const markLoggedIn = useCallback(() => {
+    // no-op: session is driven by JWT
+  }, []);
+
+  const deleteAccount = useCallback(() => {
+    logoutUser();
+  }, [logoutUser]);
+
+  const isLoggedIn = sessionActive && !!currentUser;
 
   const value = {
-    users, // Expose for checks
-    currentUser, // Active user
+    users,
+    currentUser,
+    user: currentUser,
     saveUser,
     loginUser,
+    setAuthSession,
     logoutUser,
     isLoggedIn,
     updateUser,
+    markLoggedIn,
+    deleteAccount,
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

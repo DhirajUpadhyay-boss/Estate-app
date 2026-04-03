@@ -111,5 +111,9 @@ It is a architecture: helps in definiing the code-structure properly.
 [Learning MVC helps you split routes/controllers, business logic/models, and responses/views so your Register, blogs, and properties code stays organized, easier to test, and simpler to grow without one giant file.]
 
 ----[Inner-working-between-Frontend-and-Backend]_____________________________________
-Yes — your React page (e.g. Home.jsx) uses axios to send an HTTP GET to something like http://localhost:5000/api/research, Express loads that in server.js via app.use / app.get, the matching route forwards the request to the right controller, and the controller responds with JSON that axios returns to your component.
 
+
+<Why MVC: >It separates concerns — routes decides where the request goes, controller decides what logic runs, and seed/model holds the data — so each layer can be changed independently without breaking the others.
+
+<What happens internally:> 
+When axios.get('http://localhost:3055/api/research') fires, Express matches the URL to app.use('/api/research', researchRoutes) → router forwards GET / to getResearchItems in the controller → controller grabs the array from the seed file → sends it back as JSON via res.json().
