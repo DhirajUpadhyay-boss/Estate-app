@@ -1,35 +1,37 @@
-
-
 # 🏡 Estate — Real Estate Web App
 
-A full-stack Real Estate platform built using the **MERN stack**.
-Browse property listings, explore trends, and connect with agents through a clean and responsive interface.
+A full-stack Real Estate platform (**MERN-oriented**): React SPA + Express REST API, JWT auth, and MongoDB-backed users. Browse insights, news, and property-focused UI with a responsive layout.
 
----
-## 🛠 Tech Stack
+## Tech stack
 
-### **Frontend**
-- **React.js** — Component-based UI
-- **Tailwind CSS** — Utility-first modern styling
+**Frontend:** React (Vite), React Router, Tailwind CSS, Axios, Lucide React, Context API, lazy-loaded routes, debounced interactions.  
+**Backend:** Node.js, Express (MVC-style `routes/` · `controller/` · `services/`), CORS, `express.json()`, centralized error middleware, **JWT** + **bcrypt** (`/api/auth`).  
+**Data:** MongoDB + Mongoose (users); seed JSON for **`/api/research`**, **`/api/news`**, sample **`/api/properties`** until full listing CRUD.
 
-### **Backend**
-- **Node.js + Express.js** — REST API server
-- **CORS** — Cross-origin request handling
-- **express.json()** — JSON body parsing middleware
+**Next:** Next.js with TypeScript for a production-grade app shell (planned).
 
-### **Database** _(Coming Soon)_
-- **MongoDB + Mongoose** — Persistent data storage
-
-## ⚙️ API Endpoints
+## API (selected)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/api/research` | Fetch research/property data |
-| `GET` | `/api/news` | Fetch real estate news |
+| `GET` | `/api/research` | Research / insights cards |
+| `GET` | `/api/news` | News items |
+| `GET` | `/api/properties` | Listings (seed; auth for `POST`) |
+| `POST` | `/api/auth/register/send-otp` | Start registration (SMS/console in dev) |
+| `POST` | `/api/auth/register/verify-otp` | Step 1: verify OTP |
+| `POST` | `/api/auth/register/complete` | Step 2: name, email, terms → JWT |
+| `POST` | `/api/auth/login/send-otp` · `verify-otp` | Login with phone OTP → JWT |
+| `GET` | `/api/auth/me` | Current user (Bearer token) |
 
----
-## 🚧 Status: Active Development
-MongoDB + Mongoose integration coming soon.
+## Run locally
 
-## 🖥️ How Estate-App Looks on Your Desktop
-<img src="https://img.sanishtech.com/u/75ac6023ad2d288c9cae898f141abd2e.png" alt="Currency Converter Screenshot" width="800>
+```bash
+npm install && npm run dev
+cd src/Backend && npm install && npm start
+```
+
+Frontend · `http://localhost:5173` · API · `http://localhost:3055` · Set `MONGODB_URI`, `JWT_SECRET` (backend `.env`) and optional `VITE_API_URL` (frontend `.env`).
+
+## Preview
+
+<img src="https://cdn.phototourl.com/free/2026-04-01-0da3779f-70d1-444c-b4ee-1c46d62070fe.png" alt="Estate landing page" width="800" />

@@ -18,7 +18,7 @@ const useDebounce = (value, delay = 500) => {
 const Projects = () => {
   // ✅ hooks must be INSIDE component
   const navigate = useNavigate();
-  const { isLoggedIn } = useUser();
+  const { isLoggedIn, authLoading } = useUser();
 
   // API state
   const [properties, setProperties] = useState([]);
@@ -40,7 +40,7 @@ const Projects = () => {
 
   // Guard before opening external property link
   const handlePropertyClick = (e, href) => {
-    if (!isLoggedIn()) {
+    if (!authLoading && !isLoggedIn) {
       setuserloggedIn(false);
       e.preventDefault();
       alert('Please register / login to view full property details.');

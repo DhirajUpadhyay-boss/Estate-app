@@ -8,7 +8,7 @@ import { Menu } from 'lucide-react';
 const Navbar = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showTrendsDropdown, setShowTrendsDropdown] = useState(false);
-  const { currentUser: user, isLoggedIn, logoutUser } = useUser(); // Update to currentUser
+  const { currentUser: user, isLoggedIn, logoutUser, authLoading } = useUser();
   const location = useLocation();
 
   // Close Property Trends dropdown whenever route changes
@@ -177,8 +177,14 @@ const Navbar = () => {
             </ul>
 
             {/* Right side: Login/Register or Profile chip */}
-            <div className="flex items-center gap-4 mt-4 md:mt-0">
-              {!isLoggedIn && (
+            <div className="flex items-center gap-4 mt-4 md:mt-0 min-h-[44px]">
+              {authLoading && (
+                <div
+                  className="w-10 h-10 rounded-full bg-white/20 animate-pulse"
+                  aria-hidden
+                />
+              )}
+              {!authLoading && !isLoggedIn && (
                 <>
                   <Link to="/login">
                     <button className="cursor-pointer bg-transparent border border-yellow-400 text-yellow-400 px-6 lg:px-8 py-2 rounded-full font-bold hover:bg-yellow-400 hover:text-gray-900 transition-all duration-200 text-base lg:text-lg shadow-md">
@@ -193,7 +199,7 @@ const Navbar = () => {
                   </Link>
                 </>
               )}
-              {isLoggedIn && user && (
+              {!authLoading && isLoggedIn && user && (
                 <Link
                   to="/profile"
                   className="flex items-center bg-white rounded-full px-3 py-1 shadow-md cursor-pointer hover:shadow-lg transition-all"
@@ -295,7 +301,7 @@ const Navbar = () => {
             </NavLink>
           </li>
 
-          {!isLoggedIn && (
+          {!authLoading && !isLoggedIn && (
             <>
               <li className="w-full">
                 <NavLink
@@ -330,7 +336,7 @@ const Navbar = () => {
             </>
           )}
 
-          {isLoggedIn && user && (
+          {!authLoading && isLoggedIn && user && (
             <li className="w-full">
               <NavLink
                 onClick={() => setShowMobileMenu(false)}

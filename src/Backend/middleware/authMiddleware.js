@@ -3,7 +3,7 @@ const HttpError = require('../utils/httpError');
 
 /**
  * Requires Authorization: Bearer <jwt>
- * Sets req.auth = { sub, email } (JWT payload)
+ * Sets req.auth = { sub, phone, email }
  */
 function authMiddleware(req, res, next) {
   try {
@@ -15,7 +15,8 @@ function authMiddleware(req, res, next) {
     const payload = verifyToken(token);
     req.auth = {
       sub: payload.sub,
-      email: payload.email,
+      phone: payload.phone,
+      email: payload.email || '',
     };
     next();
   } catch (err) {
