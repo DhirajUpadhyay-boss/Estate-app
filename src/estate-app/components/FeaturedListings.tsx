@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { getApiBaseUrl } from "@/lib/api";
-
+// Here is property listing pages made in Typescript
 type Property = {
   id: string;
   title: string;
