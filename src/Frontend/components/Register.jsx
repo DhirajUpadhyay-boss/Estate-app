@@ -20,6 +20,7 @@ const Register = () => {
   const [error, setError] = useState('');
 
   const isValidName = (value) => /^[A-Z][a-zA-Z]{2,}$/.test(value.trim());
+  
 
   useEffect(() => {
     if (!authLoading && isLoggedIn) {

@@ -1,6 +1,6 @@
 // Profile — data from MongoDB via API; Context mirrors server after PATCH /me
 import React, { useEffect, useState } from 'react';
-import { useUser } from '../context/UserContext.jsx';
+import { useUser } from '../../context/UserContext.jsx';
 import { useNavigate } from 'react-router-dom';
 import { User as UserIcon, Phone, Mail, LogOut, Star, CreditCard } from 'lucide-react';
 

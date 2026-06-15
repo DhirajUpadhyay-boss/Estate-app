@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Phone } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useUser } from '../context/UserContext.jsx';
-import api from '../lib/api';
+import { useUser } from '../../context/UserContext.jsx';
+import api from '../../lib/api.js';
 
 const Login = () => {
   const [phone, setPhone] = useState('');

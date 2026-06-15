@@ -1,65 +1,54 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import api from '../lib/api';
 
 const Home = () => {
-  const researchItems = [
-    {
-      id: 1,
-      title: 'Price Trends',
-      description: 'Find property rates & price trends of top locations',
-      image:
-        'https://images.unsplash.com/photo-1614064641938-3bbee52942c7?auto=format&fit=crop&w=800&q=80',
-    },
-    {
-      id: 2,
-      title: 'City Insights',
-      description: 'Know about top cities before you invest',
-      image:
-        'https://images.unsplash.com/photo-1503435824048-a799a3a84bf7?auto=format&fit=crop&w=800&q=80',
-    },
-    {
-      id: 3,
-      title: 'Housing Research',
-      description: 'Read reports on Indian residential market',
-      image:
-        'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80',
-    },
-  ];
+  const [researchItems, setResearchItems] = useState([]);
+  const [newsItems, setNewsItems] = useState([]);
+  const newsScrollRef = useRef(null);
+  const animFrameRef = useRef(null);
+  const isPaused = useRef(false);
 
-  const newsItems = [
-    {
-      id: 1,
-      title:
-        'Delhi–Jaipur super expressway: Route map details and latest updates',
-      excerpt:
-        'The expressway will cover over 400 villages across seven districts in Haryana and Rajasthan.',
-      author: 'Harini Balasubramanian',
-      date: 'Nov 2025',
-      image:
-        'https://images.unsplash.com/photo-1475483768296-6163e08872a1?auto=format&fit=crop&w=900&q=80',
-    },
-    {
-      id: 2,
-      title: 'How to pay Delhi Jal Board bill online?',
-      excerpt:
-        'We explain how to check and pay the Delhi Jal Board (DJB) water bill using multiple digital options.',
-      author: 'Harini Balasubramanian',
-      date: 'Nov 2025',
-      image:
-        'https://images.unsplash.com/photo-1589739900215-0c8aa3f4e556?auto=format&fit=crop&w=900&q=80',
-    },
-    {
-      id: 3,
-      title:
-        'DDA launches Jan Sadharan Awaas Yojana 2025, offering 1k affordable flats',
-      excerpt:
-        'Interested buyers can apply for the scheme on the DDA portal. The scheme will remain open until December 21, 2025.',
-      author: 'Harini Balasubramanian',
-      date: 'Oct 2025',
-      image:
-        'https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?auto=format&fit=crop&w=900&q=80',
-    },
-  ];
+  useEffect(() => {
+    api
+      .get('/api/research')
+      .then((res) => {
+        if (Array.isArray(res.data)) setResearchItems(res.data);
+        else console.error('Expected array, got:', res.data);
+      })
+      .catch((err) => console.error('Failed to fetch research:', err));
+
+    api
+      .get('/api/news')
+      .then((res) => {
+        if (Array.isArray(res.data)) setNewsItems(res.data);
+        else console.error('Expected array, got:', res.data);
+      })
+      .catch((err) => console.error('Failed to fetch news:', err));
+  }, []);
+
+  // Auto-scroll the news strip
+  useEffect(() => {
+    if (newsItems.length === 0) return;
+    const container = newsScrollRef.current;
+    if (!container) return;
+
+    const speed = 0.6; // px per frame — increase for faster scroll
+    const tick = () => {
+      if (!isPaused.current) {
+        container.scrollLeft += speed;
+        // Loop back to start seamlessly
+        if (container.scrollLeft >= container.scrollWidth - container.clientWidth) {
+          container.scrollLeft = 0;
+        }
+      }
+      animFrameRef.current = requestAnimationFrame(tick);
+    };
+
+    animFrameRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animFrameRef.current);
+  }, [newsItems]);
+
 
   return (
     <div id="Home" className="w-full min-h-screen flex flex-col bg-white">
@@ -103,24 +92,22 @@ const Home = () => {
       {/* Research and Insights */}
       <section className="bg-white pt-16 pb-10 px-4 sm:px-6 md:px-12 lg:px-24 xl:px-32">
         <div className="max-w-6xl mx-auto">
-        <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+          <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
             Research and Insights
-          </h3> 
-        <p className="text-gray-600 mb-6 sm:mb-8">
+          </h3>
+          <p className="text-gray-600 mb-6 sm:mb-8">
             Explore useful real estate insights
           </p>
-         
 
           {/* Horizontal scroll container */}
           <div className="overflow-x-auto">
             <div className="flex gap-6 pb-4 min-w-full">
               {researchItems.map((item) => (
-                <button
+                <Link
                   key={item.id}
-                  type="button"
+                  to={item.route}
                   className="min-w-[260px] sm:min-w-[280px] md:min-w-[320px] lg:min-w-[340px] bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 flex-shrink-0 text-left"
                 >
-                  <Link to='Price'>
                   <div className="w-full h-44 sm:h-48 md:h-52 overflow-hidden rounded-t-2xl">
                     <img
                       src={item.image}
@@ -128,7 +115,6 @@ const Home = () => {
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  </Link>
                   <div className="p-5">
                     <h4 className="text-lg font-semibold text-gray-900 mb-1 flex items-center">
                       {item.title}
@@ -138,7 +124,7 @@ const Home = () => {
                       {item.description}
                     </p>
                   </div>
-                </button>
+                </Link>
               ))}
             </div>
           </div>
@@ -165,34 +151,45 @@ const Home = () => {
             </button>
           </div>
 
-          {/* Horizontal scroll container */}
-          <div className="overflow-x-auto">
-            <div className="flex gap-6 pb-4 min-w-full">
-              {newsItems.map((item) => (
-                <article
-                  key={item.id}
-                  className="min-w-[280px] sm:min-w-[320px] md:min-w-[360px] lg:min-w-[380px] bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 flex-shrink-0"
+          {/* Auto-scrolling news strip — left to right */}
+          <div
+            ref={newsScrollRef}
+            className="overflow-x-hidden cursor-grab select-none"
+            onMouseEnter={() => (isPaused.current = true)}
+            onMouseLeave={() => (isPaused.current = false)}
+          >
+            <div className="flex gap-5 pb-2">
+              {[...newsItems, ...newsItems].map((item, idx) => (
+                <a
+                  key={`${item.id}-${idx}`}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-shrink-0 w-[260px] bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 flex flex-col"
                 >
-                  <div className="w-full h-44 sm:h-52 md:h-56 overflow-hidden rounded-t-2xl">
+                  {/* Fixed aspect-ratio image box — 16:9 */}
+                  <div className="w-full aspect-video overflow-hidden rounded-t-xl">
                     <img
                       src={item.image}
                       alt={item.title}
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <div className="p-5">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-2">
+
+                  {/* Card body */}
+                  <div className="p-4 flex flex-col flex-1">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-2 line-clamp-2 leading-snug">
                       {item.title}
                     </h4>
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-3">
+                    <p className="text-xs text-gray-500 mb-3 line-clamp-2 leading-relaxed flex-1">
                       {item.excerpt}
                     </p>
-                    <div className="flex items-center justify-between text-xs text-gray-500 border-t border-gray-100 pt-3">
-                      <span>{item.author}</span>
-                      <span>{item.date}</span>
+                    <div className="flex items-center justify-between text-[11px] text-gray-400 border-t border-gray-100 pt-2 mt-auto">
+                      <span className="truncate max-w-[120px]">{item.author}</span>
+                      <span className="shrink-0 ml-2">{item.date}</span>
                     </div>
                   </div>
-                </article>
+                </a>
               ))}
             </div>
           </div>

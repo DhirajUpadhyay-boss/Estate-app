@@ -4,26 +4,26 @@ import { createRoot } from 'react-dom/client';
 import './index.css';
 
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import { UserProvider } from './context/UserContext.jsx';
+import { UserProvider } from './Frontend/context/UserContext.jsx';
 
 // Eagerly loaded (needed immediately)
-import Layout from './Layout.jsx';
-import Home from './components/Home.jsx';
+import Layout from './Frontend/Layout.jsx';
+import Home from './Frontend/components/Home.jsx';
 
 // Lazy loaded
-const Projects = lazy(() => import('./components/Projects/Projects.jsx'));
-const Testimonials = lazy(() => import('./components/Testimonials/Testimonials.jsx'));
-const Register = lazy(() => import('./components/Register.jsx'));
-const LegalTerms = lazy(() => import('./assets/LegalTerms.jsx'));
-const Login = lazy(() => import('./Account/Login.jsx'));
-const Profile = lazy(() => import('./Account/Profile.jsx'));
-const Price = lazy(() => import('./Home/Price.jsx'));
-const Housing = lazy(() => import('./Home/Housing.jsx'));
-const PropertyTrend = lazy(() => import('./Home/PropertyTrend.jsx'));
-const Markets = lazy(() => import('./Propertyblog/Markets.jsx'));
-const CurrentNews = lazy(() => import('./Propertyblog/Current.jsx'));
-const Budget2024 = lazy(() => import('./Propertyblog/Budget.jsx'));
-const LocalityTrends = lazy(() => import('./Propertyblog/Locality.jsx'));
+const Projects = lazy(() => import('./Frontend/components/Projects/Projects.jsx'));
+const Testimonials = lazy(() => import('./Frontend/components/Testimonials/Testimonials.jsx'));
+const Register = lazy(() => import('./Frontend/components/Register.jsx'));
+const LegalTerms = lazy(() => import('./Frontend/assets/LegalTerms.jsx'));
+const Login = lazy(() => import('./Frontend/Account/Login.jsx'));
+const Profile = lazy(() => import('./Frontend/Account/Profile.jsx'));
+const Price = lazy(() => import('./Frontend/Home/Price.jsx'));
+const Housing = lazy(() => import('./Frontend/Home/Housing.jsx'));
+const PropertyTrend = lazy(() => import('./Frontend/Home/PropertyTrend.jsx'));
+const Markets = lazy(() => import('./Frontend/Propertyblog/Markets.jsx'));
+const CurrentNews = lazy(() => import('./Frontend/Propertyblog/Current.jsx'));
+const Budget2024 = lazy(() => import('./Frontend/Propertyblog/Budget.jsx'));
+const LocalityTrends = lazy(() => import('./Frontend/Propertyblog/Locality.jsx'));
 
 const router = createBrowserRouter([
   {
