@@ -1,23 +1,23 @@
+const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const { signToken } = require('../config/jwt');
 const HttpError = require('../utils/httpError');
-const {
-  setOtp,
-  consumeOtp,
-  generateSixDigitCode,
-} = require('./otpStore');
-const {
-  setPhoneVerifiedForRegister,
-  canCompleteRegister,
-  clearPhoneVerified,
-} = require('./registerAllow');
+const { setOtp, consumeOtp, generateSixDigitCode } = require('./otpStore');
+const { setEmailVerifiedForRegister, canCompleteRegister, clearEmailVerified } = require('./registerAllow');
+const sendOtpEmail = require('../utils/sendOtpEmail');
+const checkGmailExists = require('../utils/checkGmailExists');
 
-function normalizePhone(phone) {
-  const digits = String(phone || '').replace(/\D/g, '');
-  if (digits.length === 10) return digits;
-  if (digits.length === 12 && digits.startsWith('91')) return digits.slice(2);
-  if (digits.length === 11 && digits.startsWith('0')) return digits.slice(1);
-  return null;
+function normalizeEmail(email) {
+  return String(email || '').toLowerCase().trim();
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+// Only allow Gmail addresses — enforced on all OTP send calls
+function isGmailAddress(email) {
+  return email.endsWith('@gmail.com');
 }
 
 function toPublicUser(userDoc) {
@@ -25,140 +25,137 @@ function toPublicUser(userDoc) {
     id: userDoc._id.toString(),
     name: userDoc.name,
     email: userDoc.email || '',
-    phone: userDoc.phone,
   };
 }
 
 function issueToken(userDoc) {
   const pub = toPublicUser(userDoc);
-  const token = signToken({
-    sub: pub.id,
-    phone: pub.phone,
-    email: pub.email || '',
-  });
+  const token = signToken({ sub: pub.id, email: pub.email });
   return { user: pub, token };
 }
 
-async function sendRegisterOtp(rawPhone) {
-  const phone = normalizePhone(rawPhone);
-  if (!phone) {
-    throw new HttpError(400, 'Enter a valid 10-digit mobile number');
-  }
+// ─── REGISTER ────────────────────────────────────────────────────────────────
 
-  const existing = await User.findOne({ phone });
-  if (existing) {
-    throw new HttpError(409, 'This number is already registered. Please login.');
+async function sendRegisterOtp(rawEmail) {
+  const email = normalizeEmail(rawEmail);
+  if (!isValidEmail(email)) throw new HttpError(400, 'Enter a valid email address.');
+  if (!isGmailAddress(email)) throw new HttpError(400, 'Only Gmail addresses (@gmail.com) are accepted.');
+
+  const existing = await User.findOne({ email });
+  if (existing) throw new HttpError(409, 'This email is already registered. Please login.');
+
+  // Check if this Gmail inbox actually exists before sending OTP
+  const gmailExists = await checkGmailExists(email);
+  if (!gmailExists) {
+    throw new HttpError(400, `The Gmail address "${email}" does not exist. Please enter a real Gmail account.`);
   }
 
   const code = generateSixDigitCode();
-  setOtp('register', phone, code);
-  console.log(`[OTP register] ${phone} → ${code} (dev only — use SMS in production)`);
-  return { message: 'OTP sent. Check server console in development.' };
+  setOtp('register', email, code);
+
+  try {
+    await sendOtpEmail(email, code, 'register');
+    console.log(`[OTP register] ${email} → ${code}`);
+  } catch (mailErr) {
+    setOtp('register', email, '______');
+    console.error(`[OTP register] Failed to send to ${email}:`, mailErr.message);
+    throw new HttpError(400, 'Could not deliver email to this address. Please check the Gmail address and try again.');
+  }
+
+  return { message: 'OTP sent to your Gmail. Check your inbox.' };
 }
 
-/** Step 1: verify OTP only; opens a short window for step 2 complete */
-async function verifyRegisterOtp(body) {
-  const phone = normalizePhone(body.phone);
-  if (!phone) throw new HttpError(400, 'Invalid phone number');
-  if (!body.code || String(body.code).trim().length !== 6) {
-    throw new HttpError(400, 'Enter the 6-digit OTP');
+async function verifyRegisterOtp({ email: rawEmail, code }) {
+  const email = normalizeEmail(rawEmail);
+  if (!isValidEmail(email)) throw new HttpError(400, 'Invalid email address.');
+  if (!code || String(code).trim().length !== 6) throw new HttpError(400, 'Enter the 6-digit OTP.');
+
+  const existing = await User.findOne({ email });
+  if (existing) throw new HttpError(409, 'This email is already registered. Please login.');
+
+  if (!consumeOtp('register', email, String(code).trim())) {
+    throw new HttpError(400, 'Invalid or expired OTP. Please request a new one.');
   }
 
-  const existing = await User.findOne({ phone });
-  if (existing) {
-    throw new HttpError(409, 'This number is already registered. Please login.');
-  }
-
-  if (!consumeOtp('register', phone, body.code)) {
-    throw new HttpError(400, 'Invalid or expired OTP');
-  }
-
-  setPhoneVerifiedForRegister(phone);
-  return { verified: true, message: 'Phone verified. You can complete your profile.' };
+  setEmailVerifiedForRegister(email);
+  return { verified: true, message: 'Email verified. Complete your profile.' };
 }
 
-async function completeRegister(body) {
-  const phone = normalizePhone(body.phone);
-  if (!phone) throw new HttpError(400, 'Invalid phone number');
+async function completeRegister({ email: rawEmail, name, password, termsAccepted }) {
+  const email = normalizeEmail(rawEmail);
+  if (!isValidEmail(email)) throw new HttpError(400, 'Invalid email address.');
 
-  const { name, termsAccepted } = body;
   if (!name || typeof name !== 'string' || !name.trim()) {
-    throw new HttpError(400, 'Name is required');
+    throw new HttpError(400, 'Name is required.');
+  }
+  if (!password || String(password).length < 6) {
+    throw new HttpError(400, 'Password must be at least 6 characters.');
   }
   if (termsAccepted !== true) {
-    throw new HttpError(400, 'You must accept the Terms & Conditions');
+    throw new HttpError(400, 'You must accept the Terms & Conditions.');
   }
 
-  const existing = await User.findOne({ phone });
-  if (existing) {
-    throw new HttpError(409, 'This number is already registered');
+  const existing = await User.findOne({ email });
+  if (existing) throw new HttpError(409, 'This email is already registered.');
+
+  if (!canCompleteRegister(email)) {
+    throw new HttpError(400, 'Email not verified or session expired. Go back and verify OTP again.');
   }
 
-  if (!canCompleteRegister(phone)) {
-    throw new HttpError(
-      400,
-      'Phone not verified or session expired. Go back and verify OTP again.'
-    );
-  }
-
-  let email = body.email;
-  if (email != null && String(email).trim() !== '') {
-    email = String(email).toLowerCase().trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      throw new HttpError(400, 'Invalid email format');
-    }
-    const emailTaken = await User.findOne({ email });
-    if (emailTaken) throw new HttpError(409, 'Email already in use');
-  } else {
-    email = null;
-  }
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   const user = await User.create({
-    phone,
-    name: name.trim(),
     email,
+    name: name.trim(),
+    password: hashedPassword,
     termsAcceptedAt: new Date(),
   });
 
-  clearPhoneVerified(phone);
+  clearEmailVerified(email);
   return issueToken(user);
 }
 
-async function sendLoginOtp(rawPhone) {
-  const phone = normalizePhone(rawPhone);
-  if (!phone) {
-    throw new HttpError(400, 'Enter a valid 10-digit mobile number');
-  }
+// ─── LOGIN ────────────────────────────────────────────────────────────────────
 
-  const user = await User.findOne({ phone });
-  if (!user) {
-    throw new HttpError(404, 'No account with this number. Please register first.');
-  }
+async function sendLoginOtp(rawEmail) {
+  const email = normalizeEmail(rawEmail);
+  if (!isValidEmail(email)) throw new HttpError(400, 'Enter a valid email address.');
+  if (!isGmailAddress(email)) throw new HttpError(400, 'Only Gmail addresses (@gmail.com) are accepted.');
+
+  const user = await User.findOne({ email });
+  if (!user) throw new HttpError(404, 'No account found with this email. Please register first.');
 
   const code = generateSixDigitCode();
-  setOtp('login', phone, code);
-  console.log(`[OTP login] ${phone} → ${code} (dev only — use SMS in production)`);
-  return { message: 'OTP sent. Check server console in development.' };
+  setOtp('login', email, code);
+
+  try {
+    await sendOtpEmail(email, code, 'login');
+    console.log(`[OTP login] ${email} → ${code}`);
+  } catch (mailErr) {
+    setOtp('login', email, '______'); // invalidate
+    console.error(`[OTP login] Failed to send to ${email}:`, mailErr.message);
+    throw new HttpError(400, 'Could not deliver email. Please check your Gmail address and try again.');
+  }
+
+  return { message: 'OTP sent to your Gmail. Check your inbox.' };
 }
 
-async function verifyLoginOtp(body) {
-  const phone = normalizePhone(body.phone);
-  if (!phone) throw new HttpError(400, 'Invalid phone number');
-  if (!body.code || String(body.code).trim().length !== 6) {
-    throw new HttpError(400, 'Enter the 6-digit OTP');
-  }
+async function verifyLoginOtp({ email: rawEmail, code }) {
+  const email = normalizeEmail(rawEmail);
+  if (!isValidEmail(email)) throw new HttpError(400, 'Invalid email address.');
+  if (!code || String(code).trim().length !== 6) throw new HttpError(400, 'Enter the 6-digit OTP.');
 
-  const user = await User.findOne({ phone });
-  if (!user) {
-    throw new HttpError(404, 'No account with this number');
-  }
+  const user = await User.findOne({ email });
+  if (!user) throw new HttpError(404, 'No account found with this email.');
 
-  if (!consumeOtp('login', phone, body.code)) {
-    throw new HttpError(400, 'Invalid or expired OTP');
+  if (!consumeOtp('login', email, String(code).trim())) {
+    throw new HttpError(400, 'Invalid or expired OTP. Please request a new one.');
   }
 
   return issueToken(user);
 }
+
+// ─── PROFILE ─────────────────────────────────────────────────────────────────
 
 async function getUserById(userId) {
   const user = await User.findById(userId);
@@ -166,32 +163,24 @@ async function getUserById(userId) {
   return toPublicUser(user);
 }
 
-async function updateProfile(userId, { name, email }) {
+async function updateProfile(userId, { name, email: rawEmail }) {
   const user = await User.findById(userId);
   if (!user) throw new HttpError(404, 'User not found');
 
   if (name != null) {
-    if (typeof name !== 'string' || !name.trim()) {
-      throw new HttpError(400, 'Name cannot be empty');
-    }
+    if (!name.trim()) throw new HttpError(400, 'Name cannot be empty.');
     user.name = name.trim();
   }
 
-  if (email !== undefined) {
-    const trimmed = String(email || '').trim();
+  if (rawEmail !== undefined) {
+    const trimmed = normalizeEmail(rawEmail);
     if (trimmed === '') {
       user.email = null;
     } else {
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-        throw new HttpError(400, 'Invalid email format');
-      }
-      const lower = trimmed.toLowerCase();
-      const taken = await User.findOne({
-        email: lower,
-        _id: { $ne: user._id },
-      });
-      if (taken) throw new HttpError(409, 'Email already in use');
-      user.email = lower;
+      if (!isValidEmail(trimmed)) throw new HttpError(400, 'Invalid email format.');
+      const taken = await User.findOne({ email: trimmed, _id: { $ne: user._id } });
+      if (taken) throw new HttpError(409, 'Email already in use.');
+      user.email = trimmed;
     }
   }
 
@@ -200,7 +189,6 @@ async function updateProfile(userId, { name, email }) {
 }
 
 module.exports = {
-  normalizePhone,
   sendRegisterOtp,
   verifyRegisterOtp,
   completeRegister,

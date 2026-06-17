@@ -1,27 +1,27 @@
-/** After OTP is verified, allow /register/complete for this phone for a short time */
+/** After email OTP is verified, allow /register/complete for this email for 15 minutes */
 const WINDOW_MS = 15 * 60 * 1000;
-/** @type {Map<string, number>} phone -> expiresAt */
+/** @type {Map<string, number>} email -> expiresAt */
 const registerAllowedUntil = new Map();
 
-function setPhoneVerifiedForRegister(phone) {
-  registerAllowedUntil.set(phone, Date.now() + WINDOW_MS);
+function setEmailVerifiedForRegister(email) {
+  registerAllowedUntil.set(email, Date.now() + WINDOW_MS);
 }
 
-function canCompleteRegister(phone) {
-  const until = registerAllowedUntil.get(phone);
+function canCompleteRegister(email) {
+  const until = registerAllowedUntil.get(email);
   if (!until || Date.now() > until) {
-    registerAllowedUntil.delete(phone);
+    registerAllowedUntil.delete(email);
     return false;
   }
   return true;
 }
 
-function clearPhoneVerified(phone) {
-  registerAllowedUntil.delete(phone);
+function clearEmailVerified(email) {
+  registerAllowedUntil.delete(email);
 }
 
 module.exports = {
-  setPhoneVerifiedForRegister,
+  setEmailVerifiedForRegister,
   canCompleteRegister,
-  clearPhoneVerified,
+  clearEmailVerified,
 };

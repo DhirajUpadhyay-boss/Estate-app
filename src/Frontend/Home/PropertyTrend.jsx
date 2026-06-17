@@ -8,7 +8,6 @@ const PropertyTrend = () => {
   )
 }
 
-export default PropertyTrend
 
 
 import React, { useState, useEffect } from "react";

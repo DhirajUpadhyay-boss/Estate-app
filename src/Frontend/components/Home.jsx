@@ -68,7 +68,7 @@ const Home = () => {
 
         <div className="relative container mx-auto px-4 sm:px-6 md:px-12 lg:px-24 xl:px-48 h-full flex items-center justify-center">
           <div className="text-center">
-            <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-8">
+            <h2 className="text-2xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-8">
               Explore homes that fit your dreams
             </h2>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -80,6 +80,10 @@ const Home = () => {
               </Link>
               <a
                 href="#Contact"
+                onClick={(e) => {
+                  const el = document.getElementById('Contact');
+                  if (el) { e.preventDefault(); el.scrollIntoView({ behavior: 'smooth' }); }
+                }}
                 className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-300 font-medium"
               >
                 Contact Us

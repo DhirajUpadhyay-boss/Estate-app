@@ -1,30 +1,36 @@
 const asyncHandler = require('../utils/asyncHandler');
 const authService = require('../services/authService');
 
+// ─── REGISTER ────────────────────────────────────────────────────────────────
+
 const sendRegisterOtp = asyncHandler(async (req, res) => {
-  const result = await authService.sendRegisterOtp(req.body.phone);
+  const result = await authService.sendRegisterOtp(req.body.email);
   res.json(result);
 });
 
 const verifyRegisterOtp = asyncHandler(async (req, res) => {
-  const result = await authService.verifyRegisterOtp(req.body);
+  const result = await authService.verifyRegisterOtp(req.body); // { email, code }
   res.json(result);
 });
 
 const completeRegister = asyncHandler(async (req, res) => {
-  const result = await authService.completeRegister(req.body);
+  const result = await authService.completeRegister(req.body); // { email, name, password, termsAccepted }
   res.status(201).json(result);
 });
 
+// ─── LOGIN ────────────────────────────────────────────────────────────────────
+
 const sendLoginOtp = asyncHandler(async (req, res) => {
-  const result = await authService.sendLoginOtp(req.body.phone);
+  const result = await authService.sendLoginOtp(req.body.email);
   res.json(result);
 });
 
 const verifyLoginOtp = asyncHandler(async (req, res) => {
-  const result = await authService.verifyLoginOtp(req.body);
+  const result = await authService.verifyLoginOtp(req.body); // { email, code }
   res.json(result);
 });
+
+// ─── SESSION ─────────────────────────────────────────────────────────────────
 
 const logout = asyncHandler(async (req, res) => {
   res.json({ message: 'Logged out. Remove token on the client.' });
